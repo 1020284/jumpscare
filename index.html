@@ -10,8 +10,13 @@
       font-family: monospace;
       padding: 20px;
     }
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
     #command {
-      width: 70%;
+      flex: 1;
       padding: 10px;
       font-size: 16px;
       background: #222;
@@ -25,33 +30,34 @@
       color: #111;
       border: none;
       cursor: pointer;
-      margin-left: 5px;
     }
     #log {
       white-space: pre-wrap;
-      margin-top: 20px;
+      margin-top: 16px;
       max-height: 70vh;
       overflow-y: auto;
     }
-    .highlight {
-      color: cyan;
-    }
+    .highlight { color: cyan; }
+    .muted { color: #7f7; }
   </style>
 </head>
 <body>
   <h1>🤖 Ultimate Learning AI Assistant</h1>
-  <div>
+
+  <!-- Use a real form for reliable submit behavior -->
+  <form id="chatForm" class="row" autocomplete="off">
     <input id="command" placeholder="Ask me anything or teach me..." autofocus />
-    <button id="sendBtn">Send</button>
-  </div>
-  <div id="log"></div>
+    <button id="sendBtn" type="submit">Send</button>
+  </form>
+
+  <div id="log" aria-live="polite" aria-label="Conversation log"></div>
 
   <script>
+    const form = document.getElementById('chatForm');
     const input = document.getElementById('command');
-    const sendBtn = document.getElementById('sendBtn');
     const log = document.getElementById('log');
 
-    // Load memory from localStorage or start fresh
+    // Load memory or initialize
     let memory = JSON.parse(localStorage.getItem('assistantMemory')) || {
       name: null,
       facts: {
@@ -61,86 +67,56 @@
       phrases: []
     };
 
-    let awaitingDefinition = null;
+    let awaitingDefinition = null; // term or phrase we’re waiting for the user to define
 
-    // Save memory to localStorage
     function saveMemory() {
       localStorage.setItem('assistantMemory', JSON.stringify(memory));
     }
 
-    // Enter key
-    input.addEventListener('keyup', e => {
-      if (e.key === 'Enter') handleCommand();
-    });
-
-    // Send button
-    sendBtn.addEventListener('click', handleCommand);
-
-    function handleCommand() {
-      const cmd = input.value.trim();
-      if (!cmd) return;
-      input.value = '';
-      processCommand(cmd);
+    function appendLog(html) {
+      log.innerHTML += `\n${html}`;
+      log.scrollTop = log.scrollHeight;
     }
 
+    function handleSubmit(cmdRaw) {
+      const cmd = (cmdRaw || "").trim();
+      if (!cmd) { input.focus(); return; }
+
+      appendLog(`<span class="highlight">> ${cmd}</span>`);
+      processCommand(cmd);
+      input.focus();
+    }
+
+    // Reliable submit: form submit is the source of truth
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSubmit(input.value);
+      input.value = '';
+    });
+
+    // Fallback: Enter on keyup (covers edge cases in some setups)
+    input.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        // form submit already handles it, but this keeps behavior snappy on some browsers
+      }
+    });
+
     function processCommand(cmd) {
-      log.innerHTML += `\n<span class="highlight">> ${cmd}</span>`;
       const lower = cmd.toLowerCase();
       let response = '';
 
-      // If waiting for a definition
+      // If we’re waiting for a definition from the user
       if (awaitingDefinition) {
         memory.facts[awaitingDefinition] = cmd;
         response = `Thanks! I’ve learned that "${awaitingDefinition}" means "${cmd}".`;
         awaitingDefinition = null;
         saveMemory();
-        log.innerHTML += `\n${response}`;
-        log.scrollTop = log.scrollHeight;
+        appendLog(response);
         return;
       }
 
-      // Name memory
-      if (lower.startsWith('my name is')) {
-        memory.name = cmd.split('is')[1].trim();
-        response = `Nice to meet you, ${memory.name}!`;
-        saveMemory();
-      } else if (lower.includes('what is my name')) {
-        response = memory.name ? `Your name is ${memory.name}.` : `I don't know your name yet.`;
-      }
-
-      // Time and date
-      else if (lower.includes('time')) {
-        response = 'Current time: ' + new Date().toLocaleTimeString();
-      } else if (lower.includes('date')) {
-        response = 'Today is: ' + new Date().toLocaleDateString();
-      }
-
-      // Math
-      else if (lower.startsWith('calculate')) {
-        try {
-          const expr = cmd.replace(/calculate/i, '').trim();
-          const result = Function('"use strict";return (' + expr + ')')();
-          response = `Result: ${result}`;
-        } catch {
-          response = `I couldn't calculate that.`;
-        }
-      }
-
-      // Teach new facts
-      else if (lower.startsWith('remember that')) {
-        const phrase = cmd.replace(/remember that/i, '').trim();
-        const [term, meaning] = phrase.split(' is ');
-        if (term && meaning) {
-          memory.facts[term.trim()] = meaning.trim();
-          response = `Got it. "${term.trim()}" means "${meaning.trim()}".`;
-          saveMemory();
-        } else {
-          response = `Use the format: remember that [thing] is [definition].`;
-        }
-      }
-
-      // Teach phrases
-      else if (lower.startsWith('remember this phrase:')) {
+      // Teach phrases explicitly
+      if (lower.startsWith('remember this phrase:')) {
         const phrase = cmd.replace(/remember this phrase:/i, '').trim();
         if (phrase) {
           memory.phrases.push(phrase);
@@ -149,64 +125,131 @@
         } else {
           response = "Please give me a phrase to remember.";
         }
+        appendLog(response);
+        return;
       }
 
-      // Recall phrases
-      else if (lower.includes('what phrases do you remember')) {
+      // Show remembered phrases
+      if (lower.includes('what phrases do you remember')) {
         if (memory.phrases.length > 0) {
           response = "I remember these phrases:\n- " + memory.phrases.join("\n- ");
         } else {
           response = "I don't remember any phrases yet.";
         }
+        appendLog(response);
+        return;
+      }
+
+      // Name memory
+      if (lower.startsWith('my name is')) {
+        memory.name = cmd.split(/my name is/i)[1].trim();
+        response = `Nice to meet you, ${memory.name}!`;
+        saveMemory();
+        appendLog(response);
+        return;
+      }
+      if (lower.includes('what is my name')) {
+        response = memory.name ? `Your name is ${memory.name}.` : `I don't know your name yet.`;
+        appendLog(response);
+        return;
+      }
+
+      // Time and date
+      if (lower.includes('time')) {
+        appendLog('Current time: ' + new Date().toLocaleTimeString());
+        return;
+      }
+      if (lower.includes('date')) {
+        appendLog('Today is: ' + new Date().toLocaleDateString());
+        return;
+      }
+
+      // Math
+      if (lower.startsWith('calculate')) {
+        try {
+          const expr = cmd.replace(/calculate/i, '').trim();
+          const result = Function('"use strict";return (' + expr + ')')();
+          appendLog(`Result: ${result}`);
+        } catch {
+          appendLog(`I couldn't calculate that.`);
+        }
+        return;
+      }
+
+      // Teach new facts (definitions)
+      if (lower.startsWith('remember that')) {
+        const phrase = cmd.replace(/remember that/i, '').trim();
+        // Accept broader formats: "X is Y" or "X means Y"
+        let [term, meaning] = phrase.split(/ is | means /i);
+        if (term && meaning) {
+          term = term.trim();
+          meaning = meaning.trim();
+          memory.facts[term] = meaning;
+          response = `Got it. "${term}" means "${meaning}".`;
+          saveMemory();
+        } else {
+          response = `Use: "remember that [thing] is [definition]" or "remember that [thing] means [definition]".`;
+        }
+        appendLog(response);
+        return;
       }
 
       // Ask for definitions
-      else if (lower.startsWith('what is')) {
-        const term = lower.replace(/what is/i, '').trim();
-        if (memory.facts[term]) {
-          response = `"${term}" means: ${memory.facts[term]}`;
-        } else {
-          response = `I don't know what "${term}" means. Can you tell me?`;
+      if (lower.startsWith('what is') || lower.startsWith('what does')) {
+        const term = lower
+          .replace(/what is/i, '')
+          .replace(/what does/i, '')
+          .replace(/mean\??/i, '')
+          .trim();
+        if (term && memory.facts[term]) {
+          appendLog(`"${term}" means: ${memory.facts[term]}`);
+        } else if (term) {
           awaitingDefinition = term;
+          appendLog(`I don't know what "${term}" means. Can you tell me?`);
+        } else {
+          appendLog('What should I look up?');
         }
+        return;
       }
 
       // Style changes
-      else if (lower.includes('change background to')) {
+      if (lower.includes('change background to')) {
         const color = lower.split('change background to')[1].trim();
         document.body.style.backgroundColor = color;
-        response = `Background changed to ${color}.`;
-      } else if (lower.includes('change text color to')) {
+        appendLog(`Background changed to ${color}.`);
+        return;
+      }
+      if (lower.includes('change text color to')) {
         const color = lower.split('change text color to')[1].trim();
         document.body.style.color = color;
         input.style.color = color;
         input.style.borderColor = color;
-        response = `Text color changed to ${color}.`;
+        appendLog(`Text color changed to ${color}.`);
+        return;
       }
 
       // What do you know
-      else if (lower.includes('what do you know')) {
+      if (lower.includes('what do you know')) {
         const terms = Object.keys(memory.facts);
-        response = terms.length
+        appendLog(terms.length
           ? `I know about: ${terms.join(', ')}.`
-          : `I don't know anything yet. Teach me something!`;
+          : `I don't know anything yet. Teach me something!`);
+        return;
       }
 
       // Fun
-      else if (lower.includes('joke')) {
-        response = 'Why did the AI go to school? To improve its neural network!';
-      } else if (lower.includes('who are you')) {
-        response = 'I’m your personal assistant. I learn, calculate, and adapt. Just keep talking to me.';
+      if (lower.includes('joke')) {
+        appendLog('Why did the AI go to school? To improve its neural network!');
+        return;
+      }
+      if (lower.includes('who are you')) {
+        appendLog('I’m your personal assistant. I learn, calculate, and adapt. Keep talking to me.');
+        return;
       }
 
-      // Unknown → ask user to define
-      else {
-        response = `I don't understand "${cmd}". Can you tell me what it means?`;
-        awaitingDefinition = cmd;
-      }
-
-      log.innerHTML += `\n${response}`;
-      log.scrollTop = log.scrollHeight;
+      // Unknown → ask user to define or explain (captures phrases too)
+      awaitingDefinition = cmd;
+      appendLog(`I don't understand "${cmd}". Can you tell me what it means?`);
     }
   </script>
 </body>
