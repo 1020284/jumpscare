@@ -9,30 +9,40 @@
       background-color: tan;
       font-family: sans-serif;
       overflow: hidden;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #upload-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #upload-label {
+      background-color: red;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: inline-block;
     }
 
     #upload {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 20;
-    }
-
-    .center-wrapper {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: dance 0.5s infinite alternate;
-      z-index: 10;
       display: none;
     }
 
+    .santa {
+      animation: dance 0.5s infinite alternate;
+      position: relative;
+    }
+
     @keyframes dance {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -52%) rotate(10deg); }
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(-10px) rotate(5deg); }
     }
 
     .head {
@@ -40,10 +50,10 @@
       height: 80px;
       background: #fdd;
       border-radius: 50%;
-      position: relative;
       border: 3px solid #900;
-      margin: 0 auto;
       overflow: hidden;
+      position: relative;
+      margin: 0 auto;
     }
 
     .face-img {
@@ -110,6 +120,7 @@
       font-weight: bold;
       color: lime;
       animation: fadeIn 1s ease-in;
+      pointer-events: none;
     }
 
     @keyframes fadeIn {
@@ -119,8 +130,12 @@
   </style>
 </head>
 <body>
-  <input type="file" id="upload" accept="image/*" />
-  <div class="center-wrapper" id="santa">
+  <div id="upload-container">
+    <label id="upload-label" for="upload">Upload Your Face</label>
+    <input type="file" id="upload" accept="image/*" />
+  </div>
+
+  <div class="santa" id="santa" style="display: none;">
     <div class="head">
       <img class="face-img" id="face" src="" alt="Your face" />
       <div class="hat"></div>
@@ -139,6 +154,7 @@
     const upload = document.getElementById('upload');
     const face = document.getElementById('face');
     const santa = document.getElementById('santa');
+    const uploadContainer = document.getElementById('upload-container');
     let textCount = 0;
     const maxTexts = 100;
 
@@ -149,7 +165,7 @@
       reader.onload = function(event) {
         face.src = event.target.result;
         santa.style.display = 'block';
-        upload.style.display = 'none';
+        uploadContainer.style.display = 'none';
         startTextRain();
       };
       reader.readAsDataURL(file);
