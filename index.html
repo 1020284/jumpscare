@@ -2,28 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dancing Santa</title>
+  <title>Dancing Santa with Your Face</title>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
       background-color: tan;
       font-family: sans-serif;
+      overflow: hidden;
       position: relative;
     }
 
-    .santa {
+    #upload {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+    }
+
+    .center-wrapper {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       animation: dance 0.5s infinite alternate;
       z-index: 10;
+      display: none;
     }
 
     @keyframes dance {
       0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -60%) rotate(10deg); }
+      100% { transform: translate(-50%, -52%) rotate(10deg); }
     }
 
     .head {
@@ -33,6 +42,14 @@
       border-radius: 50%;
       position: relative;
       border: 3px solid #900;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .face-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .hat {
@@ -61,7 +78,7 @@
       height: 120px;
       background: red;
       border-radius: 20px;
-      margin-top: 10px;
+      margin: 10px auto 0;
       position: relative;
     }
 
@@ -75,7 +92,8 @@
 
     .legs {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 20px;
       margin-top: 5px;
     }
 
@@ -101,8 +119,10 @@
   </style>
 </head>
 <body>
-  <div class="santa">
+  <input type="file" id="upload" accept="image/*" />
+  <div class="center-wrapper" id="santa">
     <div class="head">
+      <img class="face-img" id="face" src="" alt="Your face" />
       <div class="hat"></div>
       <div class="hat-ball"></div>
     </div>
@@ -116,21 +136,39 @@
   </div>
 
   <script>
+    const upload = document.getElementById('upload');
+    const face = document.getElementById('face');
+    const santa = document.getElementById('santa');
     let textCount = 0;
     const maxTexts = 100;
 
-    const interval = setInterval(() => {
-      const text = document.createElement('div');
-      text.className = 'kanye-text';
-      text.innerText = 'KANYE RULES!';
-      text.style.top = Math.random() * window.innerHeight + 'px';
-      text.style.left = Math.random() * window.innerWidth + 'px';
-      document.body.appendChild(text);
-      textCount++;
-      if (textCount >= maxTexts) {
-        clearInterval(interval);
-      }
-    }, 100);
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        face.src = event.target.result;
+        santa.style.display = 'block';
+        upload.style.display = 'none';
+        startTextRain();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function startTextRain() {
+      const interval = setInterval(() => {
+        const text = document.createElement('div');
+        text.className = 'kanye-text';
+        text.innerText = 'KANYE RULES!';
+        text.style.top = Math.random() * window.innerHeight + 'px';
+        text.style.left = Math.random() * window.innerWidth + 'px';
+        document.body.appendChild(text);
+        textCount++;
+        if (textCount >= maxTexts) {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
   </script>
 </body>
 </html>
