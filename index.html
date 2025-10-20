@@ -11,7 +11,7 @@
       padding: 20px;
     }
     #command {
-      width: 80%;
+      width: 70%;
       padding: 10px;
       font-size: 16px;
       background: #222;
@@ -51,22 +51,29 @@
     const sendBtn = document.getElementById('sendBtn');
     const log = document.getElementById('log');
 
-    const memory = {
+    // Load memory from localStorage or start fresh
+    let memory = JSON.parse(localStorage.getItem('assistantMemory')) || {
       name: null,
       facts: {
         gravity: "Gravity is the force that attracts objects toward one another.",
         photon: "A photon is a particle of light."
-      }
+      },
+      phrases: []
     };
 
-    let awaitingDefinition = null; // track if AI is waiting for a definition
+    let awaitingDefinition = null;
 
-    // Handle Enter key
+    // Save memory to localStorage
+    function saveMemory() {
+      localStorage.setItem('assistantMemory', JSON.stringify(memory));
+    }
+
+    // Enter key
     input.addEventListener('keyup', e => {
       if (e.key === 'Enter') handleCommand();
     });
 
-    // Handle Send button
+    // Send button
     sendBtn.addEventListener('click', handleCommand);
 
     function handleCommand() {
@@ -81,11 +88,12 @@
       const lower = cmd.toLowerCase();
       let response = '';
 
-      // If we are waiting for a definition
+      // If waiting for a definition
       if (awaitingDefinition) {
         memory.facts[awaitingDefinition] = cmd;
         response = `Thanks! I’ve learned that "${awaitingDefinition}" means "${cmd}".`;
         awaitingDefinition = null;
+        saveMemory();
         log.innerHTML += `\n${response}`;
         log.scrollTop = log.scrollHeight;
         return;
@@ -95,6 +103,7 @@
       if (lower.startsWith('my name is')) {
         memory.name = cmd.split('is')[1].trim();
         response = `Nice to meet you, ${memory.name}!`;
+        saveMemory();
       } else if (lower.includes('what is my name')) {
         response = memory.name ? `Your name is ${memory.name}.` : `I don't know your name yet.`;
       }
@@ -124,8 +133,30 @@
         if (term && meaning) {
           memory.facts[term.trim()] = meaning.trim();
           response = `Got it. "${term.trim()}" means "${meaning.trim()}".`;
+          saveMemory();
         } else {
           response = `Use the format: remember that [thing] is [definition].`;
+        }
+      }
+
+      // Teach phrases
+      else if (lower.startsWith('remember this phrase:')) {
+        const phrase = cmd.replace(/remember this phrase:/i, '').trim();
+        if (phrase) {
+          memory.phrases.push(phrase);
+          response = `Okay, I’ll remember this phrase: "${phrase}"`;
+          saveMemory();
+        } else {
+          response = "Please give me a phrase to remember.";
+        }
+      }
+
+      // Recall phrases
+      else if (lower.includes('what phrases do you remember')) {
+        if (memory.phrases.length > 0) {
+          response = "I remember these phrases:\n- " + memory.phrases.join("\n- ");
+        } else {
+          response = "I don't remember any phrases yet.";
         }
       }
 
@@ -136,7 +167,7 @@
           response = `"${term}" means: ${memory.facts[term]}`;
         } else {
           response = `I don't know what "${term}" means. Can you tell me?`;
-          awaitingDefinition = term; // wait for user to define it
+          awaitingDefinition = term;
         }
       }
 
