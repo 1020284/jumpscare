@@ -2,126 +2,135 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dancing Santa Surprise</title>
+  <title>Dancing Santa</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      background: black;
+      background-color: tan;
       font-family: sans-serif;
       position: relative;
     }
-    #upload {
+
+    .santa {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-    }
-    #santa {
-      position: absolute;
-      width: 200px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       animation: dance 0.5s infinite alternate;
-      z-index: 5;
+      z-index: 10;
     }
+
     @keyframes dance {
       0% { transform: translate(-50%, -50%) rotate(0deg); }
       100% { transform: translate(-50%, -60%) rotate(10deg); }
     }
+
+    .head {
+      width: 80px;
+      height: 80px;
+      background: #fdd;
+      border-radius: 50%;
+      position: relative;
+      border: 3px solid #900;
+    }
+
+    .hat {
+      width: 80px;
+      height: 40px;
+      background: red;
+      position: absolute;
+      top: -20px;
+      left: 0;
+      border-top-left-radius: 40px;
+      border-top-right-radius: 40px;
+    }
+
+    .hat-ball {
+      width: 15px;
+      height: 15px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: -25px;
+      right: 5px;
+    }
+
+    .body {
+      width: 100px;
+      height: 120px;
+      background: red;
+      border-radius: 20px;
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .belt {
+      width: 100%;
+      height: 20px;
+      background: black;
+      position: absolute;
+      top: 50px;
+    }
+
+    .legs {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+    }
+
+    .leg {
+      width: 20px;
+      height: 40px;
+      background: red;
+      border: 2px solid black;
+    }
+
     .kanye-text {
       position: absolute;
       font-size: 24px;
       font-weight: bold;
-      color: yellow;
+      color: lime;
       animation: fadeIn 1s ease-in;
     }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    #jumpscare {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-    #jumpscare img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      animation: shake 0.3s infinite;
-    }
-    @keyframes shake {
-      0% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.1) rotate(5deg); }
-      100% { transform: scale(1) rotate(-5deg); }
-    }
   </style>
 </head>
 <body>
-  <input type="file" id="upload" accept="image/*" />
-  <div id="jumpscare"><img id="scareImg" /></div>
+  <div class="santa">
+    <div class="head">
+      <div class="hat"></div>
+      <div class="hat-ball"></div>
+    </div>
+    <div class="body">
+      <div class="belt"></div>
+    </div>
+    <div class="legs">
+      <div class="leg"></div>
+      <div class="leg"></div>
+    </div>
+  </div>
 
   <script>
-    const upload = document.getElementById('upload');
-    const body = document.body;
-    let imageURL = '';
     let textCount = 0;
     const maxTexts = 100;
 
-    upload.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        imageURL = event.target.result;
-        startShow(imageURL);
-        upload.style.display = 'none';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    function startShow(imgSrc) {
-      const santa = document.createElement('div');
-      santa.id = 'santa';
-      santa.innerHTML = `
-        <img src="https://i.imgur.com/0rZQn0P.png" style="width:100%; position:absolute; z-index:1;" />
-        <img src="${imgSrc}" style="width:80px; height:80px; border-radius:50%; position:absolute; top:20px; left:60px; z-index:2;" />
-      `;
-      body.appendChild(santa);
-
-      const interval = setInterval(() => {
-        const text = document.createElement('div');
-        text.className = 'kanye-text';
-        text.innerText = 'KANYE RULES!';
-        text.style.top = Math.random() * window.innerHeight + 'px';
-        text.style.left = Math.random() * window.innerWidth + 'px';
-        body.appendChild(text);
-        textCount++;
-        if (textCount >= maxTexts) {
-          clearInterval(interval);
-          triggerJumpscare(imgSrc);
-        }
-      }, 100);
-    }
-
-    function triggerJumpscare(imgSrc) {
-      const scare = document.getElementById('jumpscare');
-      const scareImg = document.getElementById('scareImg');
-      scareImg.src = imgSrc;
-      scare.style.display = 'flex';
-      setTimeout(() => {
-        scare.style.display = 'none';
-        alert("BOO!");
-      }, 3000);
-    }
+    const interval = setInterval(() => {
+      const text = document.createElement('div');
+      text.className = 'kanye-text';
+      text.innerText = 'KANYE RULES!';
+      text.style.top = Math.random() * window.innerHeight + 'px';
+      text.style.left = Math.random() * window.innerWidth + 'px';
+      document.body.appendChild(text);
+      textCount++;
+      if (textCount >= maxTexts) {
+        clearInterval(interval);
+      }
+    }, 100);
   </script>
 </body>
 </html>
