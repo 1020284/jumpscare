@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AI Assistant with Image Insight</title>
+  <title>Ultimate Learning AI Assistant</title>
   <style>
     body {
       background: #111;
@@ -10,18 +10,22 @@
       font-family: monospace;
       padding: 20px;
     }
-    input[type="text"] {
-      width: 100%;
+    #command {
+      width: 80%;
       padding: 10px;
       font-size: 16px;
       background: #222;
       color: #0f0;
       border: 1px solid #0f0;
-      margin-top: 10px;
     }
-    input[type="file"] {
-      margin-top: 10px;
-      color: #0f0;
+    #sendBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #0f0;
+      color: #111;
+      border: none;
+      cursor: pointer;
+      margin-left: 5px;
     }
     #log {
       white-space: pre-wrap;
@@ -29,84 +33,81 @@
       max-height: 70vh;
       overflow-y: auto;
     }
-    img {
-      max-width: 100%;
-      margin-top: 10px;
-      border: 2px solid #0f0;
-    }
     .highlight {
       color: cyan;
     }
   </style>
 </head>
 <body>
-  <h1>🧠 AI Assistant with Image Insight</h1>
-  <input type="file" id="imageUpload" accept="image/*" />
-  <input type="text" id="command" placeholder="Ask me anything or teach me something..." />
+  <h1>🤖 Ultimate Learning AI Assistant</h1>
+  <div>
+    <input id="command" placeholder="Ask me anything or teach me..." autofocus />
+    <button id="sendBtn">Send</button>
+  </div>
   <div id="log"></div>
-  <div id="imagePreview"></div>
 
   <script>
     const input = document.getElementById('command');
+    const sendBtn = document.getElementById('sendBtn');
     const log = document.getElementById('log');
-    const imageUpload = document.getElementById('imageUpload');
-    const imagePreview = document.getElementById('imagePreview');
 
     const memory = {
       name: null,
       facts: {
         gravity: "Gravity is the force that attracts objects toward one another.",
-        photon: "A photon is a particle of light.",
-        democracy: "Democracy is a system of government where people vote.",
-        neuron: "A neuron is a cell that transmits signals in the body.",
-        oxygen: "Oxygen is a gas essential for breathing.",
-        evolution: "Evolution is how species change over time.",
-        atom: "An atom is the smallest unit of matter.",
-        volcano: "A volcano is a mountain that erupts lava.",
-        blackhole: "A black hole is a region of space with extreme gravity.",
-        algorithm: "An algorithm is a step-by-step procedure for solving a problem."
-      },
-      imageDescription: null
+        photon: "A photon is a particle of light."
+      }
     };
 
-    imageUpload.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = document.createElement('img');
-        img.src = event.target.result;
-        imagePreview.innerHTML = '';
-        imagePreview.appendChild(img);
-        memory.imageDescription = "It's an image you've uploaded. I can't see it directly, but you can ask me to describe it if you tell me what's in it.";
-        log.innerHTML += `\n[Image uploaded]`;
-      };
-      reader.readAsDataURL(file);
+    let awaitingDefinition = null; // track if AI is waiting for a definition
+
+    // Handle Enter key
+    input.addEventListener('keyup', e => {
+      if (e.key === 'Enter') handleCommand();
     });
 
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const cmd = input.value.trim();
-        input.value = '';
-        processCommand(cmd);
-      }
-    });
+    // Handle Send button
+    sendBtn.addEventListener('click', handleCommand);
+
+    function handleCommand() {
+      const cmd = input.value.trim();
+      if (!cmd) return;
+      input.value = '';
+      processCommand(cmd);
+    }
 
     function processCommand(cmd) {
       log.innerHTML += `\n<span class="highlight">> ${cmd}</span>`;
       const lower = cmd.toLowerCase();
       let response = '';
 
+      // If we are waiting for a definition
+      if (awaitingDefinition) {
+        memory.facts[awaitingDefinition] = cmd;
+        response = `Thanks! I’ve learned that "${awaitingDefinition}" means "${cmd}".`;
+        awaitingDefinition = null;
+        log.innerHTML += `\n${response}`;
+        log.scrollTop = log.scrollHeight;
+        return;
+      }
+
+      // Name memory
       if (lower.startsWith('my name is')) {
         memory.name = cmd.split('is')[1].trim();
         response = `Nice to meet you, ${memory.name}!`;
       } else if (lower.includes('what is my name')) {
         response = memory.name ? `Your name is ${memory.name}.` : `I don't know your name yet.`;
-      } else if (lower.includes('time')) {
+      }
+
+      // Time and date
+      else if (lower.includes('time')) {
         response = 'Current time: ' + new Date().toLocaleTimeString();
       } else if (lower.includes('date')) {
         response = 'Today is: ' + new Date().toLocaleDateString();
-      } else if (lower.startsWith('calculate')) {
+      }
+
+      // Math
+      else if (lower.startsWith('calculate')) {
         try {
           const expr = cmd.replace(/calculate/i, '').trim();
           const result = Function('"use strict";return (' + expr + ')')();
@@ -114,7 +115,10 @@
         } catch {
           response = `I couldn't calculate that.`;
         }
-      } else if (lower.startsWith('remember that')) {
+      }
+
+      // Teach new facts
+      else if (lower.startsWith('remember that')) {
         const phrase = cmd.replace(/remember that/i, '').trim();
         const [term, meaning] = phrase.split(' is ');
         if (term && meaning) {
@@ -123,18 +127,21 @@
         } else {
           response = `Use the format: remember that [thing] is [definition].`;
         }
-      } else if (lower.startsWith('what is')) {
+      }
+
+      // Ask for definitions
+      else if (lower.startsWith('what is')) {
         const term = lower.replace(/what is/i, '').trim();
         if (memory.facts[term]) {
           response = `"${term}" means: ${memory.facts[term]}`;
         } else {
-          response = `I don't know what "${term}" means yet. You can teach me by saying: remember that ${term} is [definition].`;
+          response = `I don't know what "${term}" means. Can you tell me?`;
+          awaitingDefinition = term; // wait for user to define it
         }
-      } else if (lower.includes('describe the image') || lower.includes('what is in the image')) {
-        response = memory.imageDescription
-          ? memory.imageDescription
-          : `You haven't uploaded an image yet. Try uploading one first.`;
-      } else if (lower.includes('change background to')) {
+      }
+
+      // Style changes
+      else if (lower.includes('change background to')) {
         const color = lower.split('change background to')[1].trim();
         document.body.style.backgroundColor = color;
         response = `Background changed to ${color}.`;
@@ -144,17 +151,27 @@
         input.style.color = color;
         input.style.borderColor = color;
         response = `Text color changed to ${color}.`;
-      } else if (lower.includes('what do you know')) {
+      }
+
+      // What do you know
+      else if (lower.includes('what do you know')) {
         const terms = Object.keys(memory.facts);
         response = terms.length
           ? `I know about: ${terms.join(', ')}.`
           : `I don't know anything yet. Teach me something!`;
-      } else if (lower.includes('joke')) {
+      }
+
+      // Fun
+      else if (lower.includes('joke')) {
         response = 'Why did the AI go to school? To improve its neural network!';
       } else if (lower.includes('who are you')) {
         response = 'I’m your personal assistant. I learn, calculate, and adapt. Just keep talking to me.';
-      } else {
-        response = `I'm still learning. Try asking "what is [thing]" or teaching me with "remember that [thing] is [definition]".`;
+      }
+
+      // Unknown → ask user to define
+      else {
+        response = `I don't understand "${cmd}". Can you tell me what it means?`;
+        awaitingDefinition = cmd;
       }
 
       log.innerHTML += `\n${response}`;
