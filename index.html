@@ -1,137 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ultimate Learning AI Assistant</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaMath Embed</title>
   <style>
-    body {
-      background: #111;
-      color: #0f0;
-      font-family: monospace;
-      padding: 20px;
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
     }
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    #command {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-      background: #222;
-      color: #0f0;
-      border: 1px solid #0f0;
-    }
-    #sendBtn {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #0f0;
-      color: #111;
+    iframe {
       border: none;
-      cursor: pointer;
+      width: 100%;
+      height: 100%;
     }
-    #log {
-      white-space: pre-wrap;
-      margin-top: 16px;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-    .highlight { color: cyan; }
   </style>
 </head>
 <body>
-  <h1>🤖 Ultimate Learning AI Assistant</h1>
-
-  <form id="chatForm" class="row" autocomplete="off">
-    <input id="command" placeholder="Ask me anything or teach me..." autofocus />
-    <button id="sendBtn" type="submit">Send</button>
-  </form>
-
-  <div id="log"></div>
-
-  <script>
-    const form = document.getElementById('chatForm');
-    const input = document.getElementById('command');
-    const log = document.getElementById('log');
-
-    let memory = JSON.parse(localStorage.getItem('assistantMemory')) || {
-      name: null,
-      facts: { gravity: "Gravity is the force that attracts objects toward one another." },
-      phrases: []
-    };
-    let awaitingDefinition = null;
-
-    function saveMemory() {
-      localStorage.setItem('assistantMemory', JSON.stringify(memory));
-    }
-
-    function appendLog(text) {
-      log.innerHTML += `\n${text}`;
-      log.scrollTop = log.scrollHeight;
-    }
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault(); // ✅ stop page reload
-      const cmd = input.value.trim();
-      if (!cmd) return;
-      input.value = '';
-      appendLog(`<span class="highlight">> ${cmd}</span>`);
-      processCommand(cmd);
-      input.focus();
-    });
-
-    function processCommand(cmd) {
-      const lower = cmd.toLowerCase();
-      let response = '';
-
-      if (awaitingDefinition) {
-        memory.facts[awaitingDefinition] = cmd;
-        response = `Thanks! I’ve learned that "${awaitingDefinition}" means "${cmd}".`;
-        awaitingDefinition = null;
-        saveMemory();
-        appendLog(response);
-        return;
-      }
-
-      if (lower.startsWith('my name is')) {
-        memory.name = cmd.split(/my name is/i)[1].trim();
-        response = `Nice to meet you, ${memory.name}!`;
-        saveMemory();
-      } else if (lower.includes('what is my name')) {
-        response = memory.name ? `Your name is ${memory.name}.` : `I don't know your name yet.`;
-      } else if (lower.startsWith('remember this phrase:')) {
-        const phrase = cmd.replace(/remember this phrase:/i, '').trim();
-        if (phrase) {
-          memory.phrases.push(phrase);
-          response = `Okay, I’ll remember this phrase: "${phrase}"`;
-          saveMemory();
-        }
-      } else if (lower.includes('what phrases do you remember')) {
-        response = memory.phrases.length ? "I remember:\n- " + memory.phrases.join("\n- ") : "I don't remember any phrases yet.";
-      } else if (lower.startsWith('remember that')) {
-        const phrase = cmd.replace(/remember that/i, '').trim();
-        let [term, meaning] = phrase.split(/ is | means /i);
-        if (term && meaning) {
-          memory.facts[term.trim()] = meaning.trim();
-          response = `Got it. "${term.trim()}" means "${meaning.trim()}".`;
-          saveMemory();
-        }
-      } else if (lower.startsWith('what is')) {
-        const term = lower.replace(/what is/i, '').trim();
-        if (memory.facts[term]) {
-          response = `"${term}" means: ${memory.facts[term]}`;
-        } else {
-          response = `I don't know what "${term}" means. Can you tell me?`;
-          awaitingDefinition = term;
-        }
-      } else {
-        response = `I don't understand "${cmd}". Can you tell me what it means?`;
-        awaitingDefinition = cmd;
-      }
-
-      if (response) appendLog(response);
-    }
-  </script>
+  <iframe src="https://novamath.net" title="NovaMath"></iframe>
 </body>
 </html>
