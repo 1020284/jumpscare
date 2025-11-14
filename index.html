@@ -2,23 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovaMath Embed</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-    iframe {
-      border: none;
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+  <title>Redirect with NovaMath</title>
+  <script>
+    window.onload = function() {
+      // Open a new about:blank tab
+      const newWin = window.open("about:blank", "_blank");
+
+      // Write the iframe into the new tab
+      newWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>NovaMath</title>
+          <style>
+            body, html { margin:0; padding:0; height:100%; overflow:hidden; }
+            iframe { border:none; width:100%; height:100%; }
+          </style>
+        </head>
+        <body>
+          <iframe src="https://novamath.net" title="NovaMath"></iframe>
+        </body>
+        </html>
+      `);
+      newWin.document.close();
+
+      // Redirect the original tab to Google Classroom
+      window.location.href = "https://classroom.google.com";
+    };
+  </script>
 </head>
 <body>
-  <iframe src="https://novamath.net" title="NovaMath"></iframe>
 </body>
 </html>
